@@ -168,7 +168,7 @@ def _TryReadFile(path):
 
 
 def _ReadSshKeys(keyfiles, _tostderr_fn=ToStderr):
-  """Reads the DSA SSH keys according to C{keyfiles}.
+  """Reads the SSH keys according to C{keyfiles}.
 
   @type keyfiles: dict
   @param keyfiles: Dictionary with keys of L{constants.SSHK_ALL} and two-values
@@ -223,10 +223,10 @@ def _SetupSSH(options, cluster_name, node, ssh_port, cl):
   (_, root_keyfiles) = \
     ssh.GetAllUserFiles(constants.SSH_LOGIN_USER, mkdir=False, dircheck=False)
 
-  dsa_root_keyfiles = dict((kind, value) for (kind, value)
+  root_keyfiles = dict((kind, value) for (kind, value)
                            in root_keyfiles.items()
-                           if kind == constants.SSHK_DSA)
-  root_keys = _ReadSshKeys(dsa_root_keyfiles)
+                           if kind in constants.SSHK_ALL)
+  root_keys = _ReadSshKeys(root_keyfiles)
 
   (_, cert_pem) = \
     utils.ExtractX509Certificate(utils.ReadFile(pathutils.NODED_CERT_FILE))
