@@ -1,0 +1,43 @@
+diff --git a/cabal/ganeti.template.cabal b/cabal/ganeti.template.cabal
+index a4f35196f..6ad282961 100644
+--- a/cabal/ganeti.template.cabal
++++ b/cabal/ganeti.template.cabal
+@@ -65,7 +65,6 @@ library
+     , lens                          >= 3.10       && < 4.15
+     , lifted-base                   >= 0.2.0.3    && < 0.3
+     , monad-control                 >= 0.3.1.3    && < 1.1
+-    , MonadCatchIO-transformers     >= 0.3.0.0    && < 0.4
+     , network                       >= 2.3.0.13   && < 2.7
+     , parallel                      >= 3.2.0.2    && < 3.3
+     , regex-pcre                    >= 0.94.2     && < 0.95
+diff --git a/src/Ganeti/Metad/WebServer.hs b/src/Ganeti/Metad/WebServer.hs
+index 1671ddf4b..a4fe3a0ba 100644
+--- a/src/Ganeti/Metad/WebServer.hs
++++ b/src/Ganeti/Metad/WebServer.hs
+@@ -39,7 +39,7 @@ import Control.Applicative
+ import Control.Concurrent (MVar, readMVar)
+ import Control.Monad.Error.Class (MonadError, catchError, throwError)
+ import Control.Monad.IO.Class (liftIO)
+-import qualified Control.Monad.CatchIO as CatchIO (catch)
++import qualified Control.Exception as Exception (catch)
+ import qualified Data.CaseInsensitive as CI
+ import Data.List (intercalate)
+ import Data.Map (Map)
+@@ -119,7 +119,7 @@ serveOsPackage inst params key =
+      maybeResult (JSON.readJSON instParams >>=
+                   Config.getPublicOsParams >>=
+                   getOsPackage) $ \package ->
+-       serveFile package `CatchIO.catch` \err ->
++       serveFile package `Exception.catch` \err ->
+          throwError $ "Could not serve OS package: " ++ show (err :: IOError)
+   where getOsPackage osParams =
+           case lookup key (JSON.fromJSObject osParams) of
+@@ -144,7 +144,7 @@ serveOsScript inst params script =
+           throwError $ "Could not find OS script " ++ show (os </> script)
+         serveScript os (d:ds) =
+           serveFile (d </> os </> script)
+-          `CatchIO.catch`
++          `Exception.catch`
+           \err -> do let _ = err :: IOError
+                      serveScript os ds
+ 
