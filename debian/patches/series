@@ -4,3 +4,4 @@ Makefile.am-use-C.UTF-8
 0001-Drop-dependency-on-MonadCatchIO-transformers.patch
 ghc8-fixes
 fix-this-haskell-shit.patch
+snap-server-1.0-compat

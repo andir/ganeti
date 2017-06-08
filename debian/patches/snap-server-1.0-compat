@@ -1,0 +1,75 @@
+diff --git a/src/Ganeti/Metad/WebServer.hs b/src/Ganeti/Metad/WebServer.hs
+index 1671ddf4b..4a3dcd6f1 100644
+--- a/src/Ganeti/Metad/WebServer.hs
++++ b/src/Ganeti/Metad/WebServer.hs
+@@ -39,7 +39,7 @@ import Control.Applicative
+ import Control.Concurrent (MVar, readMVar)
+ import Control.Monad.Error.Class (MonadError, catchError, throwError)
+ import Control.Monad.IO.Class (liftIO)
+-import qualified Control.Monad.CatchIO as CatchIO (catch)
++import qualified Control.Exception as Exception (catch)
+ import qualified Data.CaseInsensitive as CI
+ import Data.List (intercalate)
+ import Data.Map (Map)
+@@ -64,13 +64,19 @@ import Ganeti.Metad.Types (InstanceParams)
+ 
+ type MetaM = Snap ()
+ 
++data MetaMExc = MetaMExc String deriving (Show, Typeable)
++instance Exception MetaMExc
++
++throwError :: String -> Snap a
++throwError = throwIO . MetaMExc
++
+ split :: String -> [String]
+ split str =
+   case span (/= '/') str of
+     (x, []) -> [x]
+     (x, _:xs) -> x:split xs
+ 
+-lookupInstanceParams :: MonadError String m => String -> Map String b -> m b
++lookupInstanceParams :: String -> Map String b -> Snap b
+ lookupInstanceParams inst params =
+   case Map.lookup inst params of
+     Nothing -> throwError $ "Could not get instance params for " ++ show inst
+@@ -88,7 +94,7 @@ error405 ms = modifyResponse $
+   addHeader (CI.mk "Allow") (ByteString.pack . intercalate ", " $ map show ms)
+   . setResponseStatus 405 "Method not allowed"
+ 
+-maybeResult :: MonadError String m => Result t -> (t -> m a) -> m a
++maybeResult :: Result t -> (t -> Snap a) -> Snap a
+ maybeResult (Error err) _ = throwError err
+ maybeResult (Ok x) f = f x
+ 
+@@ -119,7 +125,7 @@ serveOsPackage inst params key =
+      maybeResult (JSON.readJSON instParams >>=
+                   Config.getPublicOsParams >>=
+                   getOsPackage) $ \package ->
+-       serveFile package `CatchIO.catch` \err ->
++       serveFile package `Exception.catch` \err ->
+          throwError $ "Could not serve OS package: " ++ show (err :: IOError)
+   where getOsPackage osParams =
+           case lookup key (JSON.fromJSObject osParams) of
+@@ -144,7 +150,7 @@ serveOsScript inst params script =
+           throwError $ "Could not find OS script " ++ show (os </> script)
+         serveScript os (d:ds) =
+           serveFile (d </> os </> script)
+-          `CatchIO.catch`
++          `Exception.catch`
+           \err -> do let _ = err :: IOError
+                      serveScript os ds
+ 
+@@ -158,10 +164,11 @@ handleMetadata params GET  "ganeti" "latest" "os/os-install-package" =
+        Logging.logInfo $ "OS install package for " ++ show remoteAddr
+        readMVar params
+      serveOsPackage remoteAddr instanceParams "os-install-package"
+-       `catchError`
++       `catch`
+        \err -> do
++         let MetaMExc e = err
+          liftIO .
+-           Logging.logWarning $ "Could not serve OS install package: " ++ err
++           Logging.logWarning $ "Could not serve OS install package: " ++ e
+          error404
+ handleMetadata params GET  "ganeti" "latest" "os/package" =
+   do remoteAddr <- ByteString.unpack . rqRemoteAddr <$> getRequest
