@@ -1,20 +1,21 @@
 diff --git a/src/Ganeti/Metad/WebServer.hs b/src/Ganeti/Metad/WebServer.hs
-index 1671ddf4b..c2d91d02e 100644
+index 1671ddf4b..e6b34dbaf 100644
 --- a/src/Ganeti/Metad/WebServer.hs
 +++ b/src/Ganeti/Metad/WebServer.hs
-@@ -37,9 +37,9 @@ module Ganeti.Metad.WebServer (start) where
+@@ -37,9 +37,10 @@ module Ganeti.Metad.WebServer (start) where
  
  import Control.Applicative
  import Control.Concurrent (MVar, readMVar)
 -import Control.Monad.Error.Class (MonadError, catchError, throwError)
  import Control.Monad.IO.Class (liftIO)
 -import qualified Control.Monad.CatchIO as CatchIO (catch)
++import Data.Typeable (Typeable)
 +import Control.Exception.Base (Exception)
 +import Control.Exception.Lifted (catch, throwIO)
  import qualified Data.CaseInsensitive as CI
  import Data.List (intercalate)
  import Data.Map (Map)
-@@ -64,13 +64,19 @@ import Ganeti.Metad.Types (InstanceParams)
+@@ -64,13 +65,19 @@ import Ganeti.Metad.Types (InstanceParams)
  
  type MetaM = Snap ()
  
@@ -35,7 +36,7 @@ index 1671ddf4b..c2d91d02e 100644
  lookupInstanceParams inst params =
    case Map.lookup inst params of
      Nothing -> throwError $ "Could not get instance params for " ++ show inst
-@@ -88,7 +94,7 @@ error405 ms = modifyResponse $
+@@ -88,7 +95,7 @@ error405 ms = modifyResponse $
    addHeader (CI.mk "Allow") (ByteString.pack . intercalate ", " $ map show ms)
    . setResponseStatus 405 "Method not allowed"
  
@@ -44,7 +45,7 @@ index 1671ddf4b..c2d91d02e 100644
  maybeResult (Error err) _ = throwError err
  maybeResult (Ok x) f = f x
  
-@@ -119,7 +125,7 @@ serveOsPackage inst params key =
+@@ -119,7 +126,7 @@ serveOsPackage inst params key =
       maybeResult (JSON.readJSON instParams >>=
                    Config.getPublicOsParams >>=
                    getOsPackage) $ \package ->
@@ -53,7 +54,7 @@ index 1671ddf4b..c2d91d02e 100644
           throwError $ "Could not serve OS package: " ++ show (err :: IOError)
    where getOsPackage osParams =
            case lookup key (JSON.fromJSObject osParams) of
-@@ -144,7 +150,7 @@ serveOsScript inst params script =
+@@ -144,7 +151,7 @@ serveOsScript inst params script =
            throwError $ "Could not find OS script " ++ show (os </> script)
          serveScript os (d:ds) =
            serveFile (d </> os </> script)
@@ -62,7 +63,7 @@ index 1671ddf4b..c2d91d02e 100644
            \err -> do let _ = err :: IOError
                       serveScript os ds
  
-@@ -158,10 +164,11 @@ handleMetadata params GET  "ganeti" "latest" "os/os-install-package" =
+@@ -158,10 +165,11 @@ handleMetadata params GET  "ganeti" "latest" "os/os-install-package" =
         Logging.logInfo $ "OS install package for " ++ show remoteAddr
         readMVar params
       serveOsPackage remoteAddr instanceParams "os-install-package"
@@ -76,7 +77,7 @@ index 1671ddf4b..c2d91d02e 100644
           error404
  handleMetadata params GET  "ganeti" "latest" "os/package" =
    do remoteAddr <- ByteString.unpack . rqRemoteAddr <$> getRequest
-@@ -174,7 +181,7 @@ handleMetadata params GET  "ganeti" "latest" "os/parameters.json" =
+@@ -174,7 +182,7 @@ handleMetadata params GET  "ganeti" "latest" "os/parameters.json" =
       instanceParams <- liftIO $ do
         Logging.logInfo $ "OS parameters for " ++ show remoteAddr
         readMVar params
@@ -85,7 +86,7 @@ index 1671ddf4b..c2d91d02e 100644
         \err -> do
           liftIO . Logging.logWarning $ "Could not serve OS parameters: " ++ err
           error404
-@@ -187,7 +194,7 @@ handleMetadata params GET  "ganeti" "latest" paramPath | isParamPath paramPath =
+@@ -187,7 +195,7 @@ handleMetadata params GET  "ganeti" "latest" paramPath | isParamPath paramPath =
          Logging.logInfo $ "OS param " ++ param ++ " for " ++ show remoteAddr
          readMVar params
        serveSingleOsParam remoteAddr instanceParams param
@@ -94,7 +95,7 @@ index 1671ddf4b..c2d91d02e 100644
          \err -> do
            liftIO .
              Logging.logWarning $ "Could not serve single OS param " ++ param ++
-@@ -200,7 +207,7 @@ handleMetadata params GET  "ganeti" "latest" script | isScript script =
+@@ -200,7 +208,7 @@ handleMetadata params GET  "ganeti" "latest" script | isScript script =
       instanceParams <- liftIO $ do
         Logging.logInfo $ "OS package for " ++ show remoteAddr
         readMVar params
