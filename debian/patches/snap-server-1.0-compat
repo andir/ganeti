@@ -1,5 +1,5 @@
 diff --git a/src/Ganeti/Metad/WebServer.hs b/src/Ganeti/Metad/WebServer.hs
-index 1671ddf4b..51842f855 100644
+index 1671ddf4b..f31f1259a 100644
 --- a/src/Ganeti/Metad/WebServer.hs
 +++ b/src/Ganeti/Metad/WebServer.hs
 @@ -37,9 +37,10 @@ module Ganeti.Metad.WebServer (start) where
@@ -90,16 +90,22 @@ index 1671ddf4b..51842f855 100644
           error404
  handleMetadata params GET  "ganeti" "latest" paramPath | isParamPath paramPath =
    case split paramPath of
-@@ -187,7 +196,7 @@ handleMetadata params GET  "ganeti" "latest" paramPath | isParamPath paramPath =
+@@ -187,11 +196,12 @@ handleMetadata params GET  "ganeti" "latest" paramPath | isParamPath paramPath =
          Logging.logInfo $ "OS param " ++ param ++ " for " ++ show remoteAddr
          readMVar params
        serveSingleOsParam remoteAddr instanceParams param
 -        `catchError`
 +        `catch`
          \err -> do
++          let MetaMExc e = err
            liftIO .
              Logging.logWarning $ "Could not serve single OS param " ++ param ++
-@@ -200,9 +209,10 @@ handleMetadata params GET  "ganeti" "latest" script | isScript script =
+-                                 ": " ++ err
++                                 ": " ++ e
+           error404
+     _ -> error404
+   where isParamPath = (==) ["os", "parameters"] . take 2 . split
+@@ -200,9 +210,10 @@ handleMetadata params GET  "ganeti" "latest" script | isScript script =
       instanceParams <- liftIO $ do
         Logging.logInfo $ "OS package for " ++ show remoteAddr
         readMVar params
