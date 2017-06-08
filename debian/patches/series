@@ -5,3 +5,4 @@ Makefile.am-use-C.UTF-8
 ghc8-fixes
 fix-this-haskell-shit.patch
 snap-server-1.0-compat
+silence-sphinx-warnings.patch

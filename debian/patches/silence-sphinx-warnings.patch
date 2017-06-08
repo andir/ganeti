@@ -1,0 +1,13 @@
+diff --git a/Makefile.am b/Makefile.am
+index dc8b63bdc..c1f3cf898 100644
+--- a/Makefile.am
++++ b/Makefile.am
+@@ -1246,7 +1246,7 @@ endif
+ 	@mkdir_p@ $$dir && \
+ 	PYTHONPATH=. ENABLE_MANPAGES=$(ENABLE_MANPAGES) COPY_DOC=1 \
+         HTML_THEME=$(SPHINX_HTML_THEME) \
+-	$(RUN_IN_TEMPDIR) autotools/sphinx-wrapper $(SPHINX) -q -W -b html \
++	$(RUN_IN_TEMPDIR) autotools/sphinx-wrapper $(SPHINX) -q -b html \
+ 		-d . \
+ 		-D version="$(VERSION_MAJOR).$(VERSION_MINOR)" \
+ 		-D release="$(PACKAGE_VERSION)" \
