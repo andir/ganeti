@@ -1,5 +1,5 @@
 diff --git a/src/Ganeti/Metad/WebServer.hs b/src/Ganeti/Metad/WebServer.hs
-index 1671ddf4b..1686c9bc4 100644
+index 1671ddf4b..51842f855 100644
 --- a/src/Ganeti/Metad/WebServer.hs
 +++ b/src/Ganeti/Metad/WebServer.hs
 @@ -37,9 +37,10 @@ module Ganeti.Metad.WebServer (start) where
@@ -99,15 +99,19 @@ index 1671ddf4b..1686c9bc4 100644
          \err -> do
            liftIO .
              Logging.logWarning $ "Could not serve single OS param " ++ param ++
-@@ -200,7 +209,7 @@ handleMetadata params GET  "ganeti" "latest" script | isScript script =
+@@ -200,9 +209,10 @@ handleMetadata params GET  "ganeti" "latest" script | isScript script =
       instanceParams <- liftIO $ do
         Logging.logInfo $ "OS package for " ++ show remoteAddr
         readMVar params
 -     serveOsScript remoteAddr instanceParams (last $ split script) `catchError`
 +     serveOsScript remoteAddr instanceParams (last $ split script) `catch`
         \err -> do
-          liftIO . Logging.logWarning $ "Could not serve OS scripts: " ++ err
+-         liftIO . Logging.logWarning $ "Could not serve OS scripts: " ++ err
++         let MetaMExc e = err
++         liftIO . Logging.logWarning $ "Could not serve OS scripts: " ++ e
           error404
+   where isScript =
+           (`elem` [ "os/scripts/create"
 diff --git a/src/Ganeti/Metad/ConfigCore.hs b/src/Ganeti/Metad/ConfigCore.hs
 index 5821baa9d..7a243f59e 100644
 --- a/src/Ganeti/Metad/ConfigCore.hs
