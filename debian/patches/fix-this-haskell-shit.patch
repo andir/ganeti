@@ -1,0 +1,22 @@
+diff --git a/src/Ganeti/HTools/Cluster/MetricsTH.hs b/src/Ganeti/HTools/Cluster/MetricsTH.hs
+index 1e2265fdb..74cd97d8e 100644
+--- a/src/Ganeti/HTools/Cluster/MetricsTH.hs
++++ b/src/Ganeti/HTools/Cluster/MetricsTH.hs
+@@ -98,7 +98,7 @@ nodeValuesDecl components = do
+   let names = map (("nv_" ++ ) . name ) components
+       types = map fromNodeType components
+   strict_types <- mapM getVarStrictTypeQ $ zip names types
+-  return [DataD [] (mkName "NodeValues") []
++  return [DataD [] (mkName "NodeValues") [] Nothing
+          [RecC (mkName "NodeValues") strict_types] []]
+ 
+ -- | Function constructs ClusterStatistics data type for metric components
+@@ -109,7 +109,7 @@ clusterStatisticsDecl components = do
+   let names = map (("cs_" ++ ) . name ) components
+       types = map statisticsType components
+   strict_types <- mapM getVarStrictTypeQ $ zip names types
+-  return [DataD [] (mkName "ClusterStatistics") []
++  return [DataD [] (mkName "ClusterStatistics") [] Nothing 
+          [RecC (mkName "ClusterStatistics") strict_types] []]
+ 
+ -- | Generates (getNodeValues :: Node.Node -> NodeValues) declaration for
