@@ -1,5 +1,5 @@
 diff --git a/src/Ganeti/Metad/WebServer.hs b/src/Ganeti/Metad/WebServer.hs
-index 1671ddf4b..8899e7630 100644
+index 1671ddf4b..29a22d095 100644
 --- a/src/Ganeti/Metad/WebServer.hs
 +++ b/src/Ganeti/Metad/WebServer.hs
 @@ -39,7 +39,8 @@ import Control.Applicative
@@ -47,7 +47,7 @@ index 1671ddf4b..8899e7630 100644
                    Config.getPublicOsParams >>=
                    getOsPackage) $ \package ->
 -       serveFile package `CatchIO.catch` \err ->
-+       serveFile package `Exception.catch` \err ->
++       serveFile package `catch` \err ->
           throwError $ "Could not serve OS package: " ++ show (err :: IOError)
    where getOsPackage osParams =
            case lookup key (JSON.fromJSObject osParams) of
@@ -56,7 +56,7 @@ index 1671ddf4b..8899e7630 100644
          serveScript os (d:ds) =
            serveFile (d </> os </> script)
 -          `CatchIO.catch`
-+          `Exception.catch`
++          `catch`
            \err -> do let _ = err :: IOError
                       serveScript os ds
  
